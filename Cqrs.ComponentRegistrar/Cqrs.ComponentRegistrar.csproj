@@ -1,0 +1,19 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>netcoreapp2.2</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="AutoMapper.Extensions.Microsoft.DependencyInjection" Version="6.0.0" />
+      <PackageReference Include="MediatR.Extensions.Microsoft.DependencyInjection" Version="6.0.1" />
+      <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\Cqrs.AppServices\Cqrs.AppServices.csproj" />
+      <ProjectReference Include="..\Cqrs.Domain.Data\Cqrs.Domain.Data.csproj" />
+      <ProjectReference Include="..\Cqrs.Infrastructure\Cqrs.Infrastructure.csproj" />
+    </ItemGroup>
+
+</Project>
