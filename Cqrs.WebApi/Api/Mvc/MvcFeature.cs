@@ -7,7 +7,7 @@ using Newtonsoft.Json;
 
 namespace Cqrs.WebApi.Api.Mvc
 {
-    [ApiFeature("Mvc", order: 0)]
+    [ApiFeature("Mvc", order: 1)]
     public class MvcFeature : ApiFeature
     {
         /// <inheritdoc />

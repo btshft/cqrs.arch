@@ -1,15 +1,20 @@
 using Cqrs.Contracts.Application;
+using Cqrs.Infrastructure.Data;
 using Cqrs.Infrastructure.Messages;
 
 namespace Cqrs.AppServices.Application.Commands
 {
+    /// <summary>
+    /// Команда создания черновика заявки.
+    /// </summary>
+    [Transactional]
     public class CreateApplicationDraftCommand : Command
     {
-        public CreateApplicationDraftCommand(ApplicationDto application)
+        public CreateApplicationDraftCommand(ApplicationDraftCreationDto creation)
         {
-            Application = application;
+            ApplicationCreation = creation;
         }
-
-        public ApplicationDto Application { get; }
+        
+        public ApplicationDraftCreationDto ApplicationCreation { get; }
     }
 }

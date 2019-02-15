@@ -1,13 +1,14 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Cqrs.AppServices.Application.Commands;
+using Cqrs.AppServices.Application.Queries;
 using Cqrs.Contracts.Application;
 using Cqrs.Infrastructure.Dispatcher;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Cqrs.WebApi.Features.Application
 {
-    [ApiController]
+    [ApiController, Route("api/[controller]")]
     public class ApplicationController : ControllerBase
     {
         private readonly IMediatorDispatcher _dispatcher;
@@ -17,12 +18,39 @@ namespace Cqrs.WebApi.Features.Application
             _dispatcher = dispatcher;
         }
 
-        [HttpPost("draft")]
-        public async Task<IActionResult> CreateDraft(ApplicationDto application, CancellationToken cancellation = default(CancellationToken))
+        [HttpGet]
+        public async Task<IActionResult> FilterApplications([FromQuery] ApplicationFilterDto filter, CancellationToken cancellation = default)
         {
-            await _dispatcher.DispatchCommandAsync(new CreateApplicationDraftCommand(application), cancellation)
+            var applications = await _dispatcher.DispatchQueryAsync(new FilterApplicationsQuery(filter), cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            return Ok(applications);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetApplication(int id, CancellationToken cancellation = default)
+        {
+            var application = await _dispatcher.DispatchQueryAsync(new GetApplicationQuery(id), cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
             
+            return Ok(application);
+        }
+
+        [HttpPost("draft")]
+        public async Task<IActionResult> CreateDraft(ApplicationDraftCreationDto creation, CancellationToken cancellation = default)
+        {
+            await _dispatcher.DispatchCommandAsync(new CreateApplicationDraftCommand(creation), cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            
+            return Ok();
+        }
+
+        [HttpPost("submit")]
+        public async Task<IActionResult> Submit(ApplicationSubmitRequest request, CancellationToken cancellation = default)
+        {
+            await _dispatcher.DispatchCommandAsync(new SubmitApplicationCommand(request.ApplicationId), cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
             return Ok();
         }
     }

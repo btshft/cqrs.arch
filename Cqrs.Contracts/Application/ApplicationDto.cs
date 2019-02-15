@@ -5,5 +5,7 @@ namespace Cqrs.Contracts.Application
     /// </summary>
     public class ApplicationDto
     {        
+        public int Id { get; set; }
+        public int Status { get; set; }
     }
 }

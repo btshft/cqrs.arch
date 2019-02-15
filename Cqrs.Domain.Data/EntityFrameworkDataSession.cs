@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Cqrs.Infrastructure.Data;
+using Microsoft.EntityFrameworkCore;
 
 namespace Cqrs.Domain.Data
 {
@@ -11,12 +12,17 @@ namespace Cqrs.Domain.Data
         public EntityFrameworkDataSession(ApplicationDbContext dbContext)
         {
             _dbContext = dbContext;
-            _dbContext.Database.BeginTransaction();
+            
+            if (!_dbContext.Database.IsInMemory())
+                _dbContext.Database.BeginTransaction();
         }
 
         /// <inheritdoc />
         public async Task CommitAsync(CancellationToken cancellation)
         {
+            if (_dbContext.Database.IsInMemory())
+                return;
+            
             if (_dbContext.Database.CurrentTransaction != null)
             {
                 await _dbContext.SaveChangesAsync(cancellation);
@@ -27,6 +33,9 @@ namespace Cqrs.Domain.Data
         /// <inheritdoc />
         public Task RollbackAsync(CancellationToken cancellation)
         {
+            if (_dbContext.Database.IsInMemory())
+                return Task.CompletedTask;
+            
             if (_dbContext.Database.CurrentTransaction != null)
                 _dbContext.Database.RollbackTransaction();
 

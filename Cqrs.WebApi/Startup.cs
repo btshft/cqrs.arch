@@ -1,14 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Cqrs.ComponentRegistrar;
+﻿using Cqrs.ComponentRegistrar;
 using Cqrs.WebApi.Api;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 
 namespace Cqrs.WebApi
 {
@@ -26,6 +22,8 @@ namespace Cqrs.WebApi
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddOptions();         
+            services.AddLogging(o => o.AddConsole());
+            
             services.AddFeatures(Configuration);
             
             ApplicationRegistrar.RegisterComponents(services);

@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using AutoMapper;
 
 namespace Cqrs.Infrastructure.Mapper
@@ -21,6 +22,11 @@ namespace Cqrs.Infrastructure.Mapper
         public void MapUpdate(object source, object destination, Type sourceType, Type destinationType)
         {
             _mapper.Map(source, destination, sourceType, destinationType);
+        }
+
+        public IQueryable<TProjection> Project<TProjection>(IQueryable queryable)
+        {
+            return _mapper.ProjectTo<TProjection>(queryable);
         }
     }
 }

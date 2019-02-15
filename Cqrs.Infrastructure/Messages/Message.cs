@@ -25,5 +25,12 @@ namespace Cqrs.Infrastructure.Messages
         
         protected Message() : this(Guid.NewGuid())
         { }
+
+        /// <inheritdoc />
+        public override string ToString()
+        {
+            var separator = $";{Environment.NewLine}";
+            return $"Type: {GetType()}{separator} Id: {Id}{separator} CorrelationId: {CorrelationId}{separator} Timestamp: {Timestamp:u}";
+        }
     }
 }
