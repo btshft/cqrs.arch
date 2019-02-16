@@ -34,3 +34,5 @@
 1. https://docs.microsoft.com/ru-ru/dotnet/standard/microservices-architecture/microservice-ddd-cqrs-patterns/microservice-application-layer-implementation-web-api#implement-the-command-process-pipeline-with-a-mediator-pattern-mediatr
 2. https://vladikk.com/2017/03/20/tackling-complexity-in-cqrs/
 3. https://martinfowler.com/bliki/CQRS.html
+4. https://sourcemaking.com/design_patterns/decorator
+5. https://sourcemaking.com/design_patterns/mediator
