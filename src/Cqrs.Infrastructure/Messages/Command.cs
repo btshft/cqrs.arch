@@ -31,7 +31,8 @@ namespace Cqrs.Infrastructure.Messages
         {
             if (@event == null)
                 throw new ArgumentException(nameof(@event));
-            
+
+            @event.CorrelationId = CorrelationId;
             _outputEvents.Enqueue(@event);
         }
         
@@ -51,10 +52,10 @@ namespace Cqrs.Infrastructure.Messages
                     var wrapped = new Exception($"Исключение при обработке события {@event.GetType()}", e);
                     exceptions.Enqueue(wrapped);
                 }
-                
-                if (exceptions.Count > 0)
-                    throw new AggregateException(exceptions);
-            }
+            }         
+                            
+            if (exceptions.Count > 0)
+                throw new AggregateException(exceptions);
         }
     }
 }

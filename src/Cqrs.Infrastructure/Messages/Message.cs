@@ -11,7 +11,7 @@ namespace Cqrs.Infrastructure.Messages
         public Guid Id { get; }
 
         /// <inheritdoc />
-        public Guid CorrelationId { get; }
+        public Guid CorrelationId { get; set; }
 
         /// <inheritdoc />
         public DateTime Timestamp { get; }
