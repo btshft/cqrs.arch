@@ -5,9 +5,9 @@ using Cqrs.Infrastructure.Messages;
 namespace Cqrs.Infrastructure.Dispatcher
 {
     /// <summary>
-    /// Интерфейс медиатора.
+    /// Интерфейс обработчика сообщений.
     /// </summary>
-    public interface IMediatorDispatcher
+    public interface IMessageDispatcher
     {
         /// <summary>
         /// Отправляет запрос на выполнение.

@@ -1,4 +1,3 @@
-using Cqrs.Domain.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace Cqrs.Domain.Data

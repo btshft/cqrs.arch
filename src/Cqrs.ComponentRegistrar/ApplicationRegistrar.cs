@@ -2,15 +2,17 @@
 using AutoMapper;
 using Cqrs.AppServices.Application.EventHandlers;
 using Cqrs.AppServices.Application.Validation;
+using Cqrs.AppServices.Application.Workflow;
 using Cqrs.Contracts.Application;
+using Cqrs.Domain;
 using Cqrs.Domain.Data;
-using Cqrs.Domain.Models;
 using Cqrs.Infrastructure.Behaviors;
 using Cqrs.Infrastructure.Data;
 using Cqrs.Infrastructure.DependencyInjection;
 using Cqrs.Infrastructure.Dispatcher;
 using Cqrs.Infrastructure.Mapper;
 using Cqrs.Infrastructure.Validation;
+using Cqrs.Infrastructure.Workflow;
 using MediatR;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -30,8 +32,14 @@ namespace Cqrs.ComponentRegistrar
             RegisterDataComponents(services);
             RegisterTypeMapper(services);
             RegisterValidators(services);
+            RegisterWorkflows(services);
         }
 
+        private static void RegisterWorkflows(IServiceCollection services)
+        {
+            services.AddWorkflow<ApplicationGuaranteeWorkflow, ApplicationGuaranteeWorkflowRegistry, ApplicationGuaranteeWorkflowCoordinator>();
+        }
+        
         private static void RegisterValidators(IServiceCollection services)
         {
             var closedValidatorTypes = typeof(CreateApplicationDraftCommandValidator).Assembly
@@ -59,7 +67,7 @@ namespace Cqrs.ComponentRegistrar
         private static void RegisterMediator(IServiceCollection services)
         {
             services.AddMediatR(typeof(ApplicationEventsHandler));
-            services.AddScoped<IMediatorDispatcher, MediatorDispatcher>();
+            services.AddScoped<IMessageDispatcher, MessageDispatcher>();
             
             // Decorators
             // ProcessOutputEventsBehavior - должен стоять раньше чем TransactionalBehavior

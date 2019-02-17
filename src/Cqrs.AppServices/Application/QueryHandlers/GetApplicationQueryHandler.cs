@@ -14,10 +14,10 @@ namespace Cqrs.AppServices.Application.QueryHandlers
     /// </summary>
     public class GetApplicationQueryHandler : IQueryHandler<GetApplicationQuery, ApplicationDto>
     {
-        private readonly IRepository<Domain.Models.Application> _applicationRepository;
+        private readonly IRepository<Domain.Application> _applicationRepository;
         private readonly ITypeMapper _typeMapper;
 
-        public GetApplicationQueryHandler(IRepository<Domain.Models.Application> applicationRepository, ITypeMapper typeMapper)
+        public GetApplicationQueryHandler(IRepository<Domain.Application> applicationRepository, ITypeMapper typeMapper)
         {
             _applicationRepository = applicationRepository;
             _typeMapper = typeMapper;

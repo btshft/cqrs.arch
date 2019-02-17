@@ -13,9 +13,9 @@ namespace Cqrs.Infrastructure.Behaviors
     /// <typeparam name="TOutput">Маркерный интерфейс для регистрации.</typeparam>
     public class ProcessOutputEventsBehavior<TCommand, TOutput> : IPipelineBehavior<TCommand, TOutput>
     {
-        private readonly IMediatorDispatcher _dispatcher;
+        private readonly IMessageDispatcher _dispatcher;
 
-        public ProcessOutputEventsBehavior(IMediatorDispatcher dispatcher)
+        public ProcessOutputEventsBehavior(IMessageDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
         }

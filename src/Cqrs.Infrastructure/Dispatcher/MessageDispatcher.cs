@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Cqrs.Infrastructure.Messages;
@@ -8,11 +9,11 @@ namespace Cqrs.Infrastructure.Dispatcher
     /// <summary>
     /// Медиатор.
     /// </summary>
-    public class MediatorDispatcher : IMediatorDispatcher
+    public class MessageDispatcher : IMessageDispatcher
     {
         private readonly IMediator _mediator;
 
-        public MediatorDispatcher(IMediator mediator)
+        public MessageDispatcher(IMediator mediator)
         {
             _mediator = mediator;
         }
@@ -32,7 +33,12 @@ namespace Cqrs.Infrastructure.Dispatcher
         /// <inheritdoc />
         public Task DispatchEventAsync(IEvent @event, CancellationToken cancellation)
         {
-            return _mediator.Publish(@event, cancellation);
+            var publishRef = typeof(IMediator)
+                .GetMethods()
+                .Single(m => m.IsGenericMethodDefinition && m.Name == nameof(IMediator.Publish));
+
+            var publishMethod = publishRef.MakeGenericMethod(@event.GetType());
+            return (Task) publishMethod.Invoke(_mediator, new object[] { @event, cancellation });
         }
     }
 }

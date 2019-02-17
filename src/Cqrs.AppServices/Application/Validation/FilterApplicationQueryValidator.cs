@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Cqrs.AppServices.Application.Queries;
-using Cqrs.Domain.Models;
+using Cqrs.Domain;
 using Cqrs.Infrastructure.Validation;
 
 namespace Cqrs.AppServices.Application.Validation

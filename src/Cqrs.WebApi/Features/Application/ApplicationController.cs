@@ -11,9 +11,9 @@ namespace Cqrs.WebApi.Features.Application
     [ApiController, Route("api/[controller]")]
     public class ApplicationController : ControllerBase
     {
-        private readonly IMediatorDispatcher _dispatcher;
+        private readonly IMessageDispatcher _dispatcher;
 
-        public ApplicationController(IMediatorDispatcher dispatcher)
+        public ApplicationController(IMessageDispatcher dispatcher)
         {
             _dispatcher = dispatcher;
         }
@@ -49,6 +49,15 @@ namespace Cqrs.WebApi.Features.Application
         public async Task<IActionResult> Submit(ApplicationSubmitRequest request, CancellationToken cancellation = default)
         {
             await _dispatcher.DispatchCommandAsync(new SubmitApplicationCommand(request.ApplicationId), cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            return Ok();
+        }
+
+        [HttpPost("withdraw")]
+        public async Task<IActionResult> Withdraw(ApplicationWithdrawRequest request, CancellationToken cancellation = default)
+        {
+            await _dispatcher.DispatchCommandAsync(new WithdrawApplicationCommand(request.ApplicationId), cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
             return Ok();

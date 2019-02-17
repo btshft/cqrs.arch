@@ -15,8 +15,8 @@ namespace Cqrs.Infrastructure.Messages
         /// <inheritdoc />
         public bool HasOutputEvents => _outputEvents.Count > 0;
         
-        protected Command(Guid correlationId) 
-            : base(correlationId)
+        protected Command(Guid workflowId) 
+            : base(workflowId)
         {
             _outputEvents = new Queue<Event>();
         }
@@ -32,7 +32,6 @@ namespace Cqrs.Infrastructure.Messages
             if (@event == null)
                 throw new ArgumentException(nameof(@event));
 
-            @event.CorrelationId = CorrelationId;
             _outputEvents.Enqueue(@event);
         }
         

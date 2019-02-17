@@ -3,16 +3,16 @@ using Cqrs.Infrastructure.Messages;
 namespace Cqrs.AppServices.Application.Events
 {
     /// <summary>
-    /// Событие утверждения заявки.
+    /// Событие отзыва заявки.
     /// </summary>
-    public class ApplicationSubmittedEvent : Event
+    public class ApplicationWithdrawnEvent : Event
     {
-        public ApplicationSubmittedEvent(Domain.Application application)
+        public ApplicationWithdrawnEvent(Domain.Application application)
             : base(application.GuaranteeWorkflowId)
         {
             ApplicationId = application.Id;
         }
-
+        
         public int ApplicationId { get; }
     }
 }

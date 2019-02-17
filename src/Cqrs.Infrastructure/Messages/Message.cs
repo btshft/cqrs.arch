@@ -11,26 +11,29 @@ namespace Cqrs.Infrastructure.Messages
         public Guid Id { get; }
 
         /// <inheritdoc />
-        public Guid CorrelationId { get; set; }
+        public Guid? WorkflowId { get; set; }
 
         /// <inheritdoc />
         public DateTime Timestamp { get; }
 
-        protected Message(Guid correlationId)
+        protected Message(Guid workflowId)
         {
             Id = Guid.NewGuid();
             Timestamp = DateTime.UtcNow;
-            CorrelationId = correlationId;
+            WorkflowId = workflowId;
         }
-        
-        protected Message() : this(Guid.NewGuid())
-        { }
+
+        protected Message()
+        {
+            Id = Guid.NewGuid();
+            Timestamp = DateTime.UtcNow;
+        }
 
         /// <inheritdoc />
         public override string ToString()
         {
             var separator = $";{Environment.NewLine}";
-            return $"Type: {GetType()}{separator} Id: {Id}{separator} CorrelationId: {CorrelationId}{separator} Timestamp: {Timestamp:u}";
+            return $"Type: {GetType()}{separator} Id: {Id}{separator} WorkflowId: {WorkflowId}{separator} Timestamp: {Timestamp:u}";
         }
     }
 }

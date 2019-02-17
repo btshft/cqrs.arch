@@ -13,9 +13,9 @@ namespace Cqrs.Infrastructure.Messages
         Guid Id { get; }
         
         /// <summary>
-        /// Идентификатор потока обмена.
+        /// Идентификатор процесса.
         /// </summary>
-        Guid CorrelationId { get; }
+        Guid? WorkflowId { get; set; }
         
         /// <summary>
         /// Отметка времени создания сообщения (UTC).
