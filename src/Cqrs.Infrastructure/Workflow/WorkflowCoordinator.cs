@@ -99,11 +99,11 @@ namespace Cqrs.Infrastructure.Workflow
         /// <returns>Экземпляр процесса.</returns>
         protected abstract Task<TWorkflow> CreateWorkflowAsync(TInitial @event, CancellationToken cancellation);
 
-        private Task DispatchWorkflowState<TEvent>(TEvent @event, TWorkflow stateMachine, CancellationToken cancellation) 
+        private Task DispatchWorkflowState<TEvent>(TEvent @event, TWorkflow workflow, CancellationToken cancellation) 
             where TEvent : IEvent
         {
             if (this is IWorkflowStateHandler<TEvent, TWorkflow> processState)
-                return processState.ProcessAsync(@event, stateMachine, cancellation);
+                return processState.ProcessAsync(@event, workflow, cancellation);
             
             throw new InvalidOperationException(
                 $"Шаг процесса типа {typeof(IWorkflowStateHandler<TEvent, TWorkflow>)} не поддерживается");

@@ -69,6 +69,6 @@ namespace Cqrs.Infrastructure.Workflow
             }
         }
 
-        protected abstract Task PersistCoreAsync(TWorkflow stateMachine, CancellationToken cancellation);
+        protected abstract Task PersistCoreAsync(TWorkflow workflow, CancellationToken cancellation);
     }
 }
