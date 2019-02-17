@@ -18,8 +18,8 @@ namespace Cqrs.Infrastructure.Workflow
         IWorkflowCoordinator<TWorkflow>, 
         IEventHandler<IEvent>, 
         IWorkflowStateHandler<TInitial, TWorkflow>
-            where TInitial : IEvent 
-            where TWorkflow : IWorkflow
+            where TInitial : class, IEvent 
+            where TWorkflow : class, IWorkflow
     {
         /// <summary>
         /// Реестр процесса.
@@ -29,7 +29,7 @@ namespace Cqrs.Infrastructure.Workflow
         /// <summary>
         /// Текущий активный процесс.
         /// </summary>
-        protected TWorkflow ActiveWorkflow { get; private set; }
+        protected WorkflowEnvelope<TWorkflow> Envelope { get; private set; }
         
         protected Lazy<IReadOnlyCollection<Type>> SupportedEventTypes { get; }
         
@@ -45,20 +45,28 @@ namespace Cqrs.Infrastructure.Workflow
             if (!SupportedEventTypes.Value.Contains(@event.GetType()))
                 return;
       
-            if (ActiveWorkflow == null)
-            {           
-                ActiveWorkflow = (@event is TInitial initial)
-                    ? await CreateWorkflowAsync(initial, cancellationToken)
-                        .ConfigureAwait(continueOnCapturedContext: false)
-                    : await Registry.FindAsync(@event.WorkflowId.Value, cancellationToken)
+            if (Envelope == null)
+            {
+                if (@event is TInitial initial)
+                {
+                    await ProcessAsync(initial, envelope: null, cancellationToken)
                         .ConfigureAwait(continueOnCapturedContext: false);
+                    
+                    return;
+                }
 
-                if (ActiveWorkflow == null)
+                var workflow = await Registry.FindAsync(@event.WorkflowId, cancellationToken)
+                    .ConfigureAwait(continueOnCapturedContext: false);
+                    
+                if (workflow == null)
                     throw new InvalidOperationException(
-                        $"Не удалось получить/создать процесс '{typeof(TWorkflow)}' для события '{@event.GetType()}'");
+                        $"Не удалось получить процесс '{typeof(TWorkflow)}' для события '{@event}'");
+                    
+                Envelope = WorkflowEnvelope.Create(workflow);
             }
             
-            if (ActiveWorkflow.IsCompleted || ActiveWorkflow.WorkflowId != @event.WorkflowId)
+            if (Envelope.Workflow.IsCompleted || 
+                Envelope.Workflow.WorkflowId != @event.WorkflowId)
                 return;
             
             var methodRef = typeof(WorkflowCoordinator<TInitial, TWorkflow>)
@@ -66,17 +74,32 @@ namespace Cqrs.Infrastructure.Workflow
             
             var method = methodRef.MakeGenericMethod(@event.GetType());
 
-            await ((Task) method.Invoke(this, new object[] { @event, ActiveWorkflow, cancellationToken }))
+            await ((Task) method.Invoke(this, new object[] { @event, Envelope, cancellationToken }))
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-            await Registry.PersistAsync(ActiveWorkflow, cancellationToken)
+            await Registry.PersistAsync(Envelope, cancellationToken)
                 .ConfigureAwait(continueOnCapturedContext: false);
         }
 
         /// <inheritdoc />
-        public async Task ProcessAsync(TInitial @event, TWorkflow workflow, CancellationToken cancellation)
+        public async Task ProcessAsync(TInitial @event, WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation)
         {
-            await InitAsync(workflow, @event, cancellation)
+            if (Envelope != null)
+                return;
+            
+            var existingWorkflow = await Registry.FindAsync(@event.WorkflowId, cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            
+            if (existingWorkflow != null)
+            {
+                Envelope = WorkflowEnvelope.Create(existingWorkflow);
+                return;
+            }
+            
+            await InitAsync(@event, cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            await Registry.PersistAsync(Envelope, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
         }
 
@@ -86,9 +109,15 @@ namespace Cqrs.Infrastructure.Workflow
         /// <param name="workflow">Процесс.</param>
         /// <param name="event">Инициирующее событие.</param>
         /// <param name="cancellation">Токен отмены действия.</param>
-        protected virtual Task InitAsync(TWorkflow workflow, TInitial @event, CancellationToken cancellation)
+        protected virtual async Task InitAsync(TInitial @event, CancellationToken cancellation)
         {
-            return Task.CompletedTask;
+            var workflow = await CreateWorkflowAsync(@event, cancellation)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            
+            if (workflow == null)
+                throw new InvalidOperationException($"Не удалось создать процесс типа '{typeof(TWorkflow)}' для события: {@event}");
+            
+            Envelope = new WorkflowEnvelope<TWorkflow>(workflow);
         }
         
         /// <summary>
@@ -99,11 +128,11 @@ namespace Cqrs.Infrastructure.Workflow
         /// <returns>Экземпляр процесса.</returns>
         protected abstract Task<TWorkflow> CreateWorkflowAsync(TInitial @event, CancellationToken cancellation);
 
-        private Task DispatchWorkflowState<TEvent>(TEvent @event, TWorkflow workflow, CancellationToken cancellation) 
-            where TEvent : IEvent
+        private Task DispatchWorkflowState<TEvent>(TEvent @event, WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation) 
+            where TEvent : class, IEvent
         {
             if (this is IWorkflowStateHandler<TEvent, TWorkflow> processState)
-                return processState.ProcessAsync(@event, workflow, cancellation);
+                return processState.ProcessAsync(@event, envelope, cancellation);
             
             throw new InvalidOperationException(
                 $"Шаг процесса типа {typeof(IWorkflowStateHandler<TEvent, TWorkflow>)} не поддерживается");

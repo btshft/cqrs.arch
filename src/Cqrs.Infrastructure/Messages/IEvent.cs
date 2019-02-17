@@ -1,3 +1,4 @@
+using System;
 using MediatR;
 
 namespace Cqrs.Infrastructure.Messages
@@ -6,5 +7,10 @@ namespace Cqrs.Infrastructure.Messages
     /// Интерфейс события.
     /// </summary>
     public interface IEvent : IMessage, INotification
-    { }
+    {
+        /// <summary>
+        /// Идентификатор процесса.
+        /// </summary>
+        Guid WorkflowId { get; }
+    }
 }

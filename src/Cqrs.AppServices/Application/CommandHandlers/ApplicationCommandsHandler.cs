@@ -1,8 +1,8 @@
 using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Cqrs.AppServices.Application.Commands;
-using Cqrs.AppServices.Application.Events;
+using Cqrs.Contracts.Application.Commands;
+using Cqrs.Contracts.Application.Events;
 using Cqrs.Domain;
 using Cqrs.Infrastructure.Data;
 using Cqrs.Infrastructure.Exceptions;
@@ -15,9 +15,9 @@ namespace Cqrs.AppServices.Application.CommandHandlers
     /// Обработчик команд по заявке.
     /// </summary>
     public class ApplicationCommandsHandler : 
-        ICommandHandler<CreateApplicationDraftCommand>,
-        ICommandHandler<SubmitApplicationCommand>,
-        ICommandHandler<WithdrawApplicationCommand>
+        ICommandHandler<CreateApplicationDraft>,
+        ICommandHandler<SubmitApplication>,
+        ICommandHandler<WithdrawApplication>
     {
         private readonly IRepository<Domain.Application> _applicationRepository;
 
@@ -27,7 +27,7 @@ namespace Cqrs.AppServices.Application.CommandHandlers
         }
 
         /// <inheritdoc />
-        public async Task<Unit> Handle(CreateApplicationDraftCommand command, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(CreateApplicationDraft command, CancellationToken cancellationToken)
         {
             var entity = new Domain.Application
             {
@@ -38,13 +38,14 @@ namespace Cqrs.AppServices.Application.CommandHandlers
             await _applicationRepository.AddAsync(entity, cancellationToken)
                 .ConfigureAwait(continueOnCapturedContext: false);
             
-            command.EnqueueOutputEvent(new ApplicationDraftCreatedEvent(entity));
+            command.EnqueueOutputEvent(new ApplicationDraftCreated(
+                entity.GuaranteeWorkflowId, entity.Id));
             
             return Unit.Value;
         }
 
         /// <inheritdoc />
-        public async Task<Unit> Handle(SubmitApplicationCommand command, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(SubmitApplication command, CancellationToken cancellationToken)
         {
             var application = await _applicationRepository.GetAsync(command.ApplicationId)
                 .ConfigureAwait(continueOnCapturedContext: false);
@@ -54,13 +55,14 @@ namespace Cqrs.AppServices.Application.CommandHandlers
 
             application.Status = ApplicationStatus.Submitted;
             
-            command.EnqueueOutputEvent(new ApplicationSubmittedEvent(application));
+            command.EnqueueOutputEvent(new ApplicationSubmitted(
+                application.GuaranteeWorkflowId, application.Id));
             
             return Unit.Value;
         }
 
         /// <inheritdoc />
-        public async Task<Unit> Handle(WithdrawApplicationCommand command, CancellationToken cancellationToken)
+        public async Task<Unit> Handle(WithdrawApplication command, CancellationToken cancellationToken)
         {
             var application = await _applicationRepository.GetAsync(command.ApplicationId)
                 .ConfigureAwait(continueOnCapturedContext: false);
@@ -70,7 +72,8 @@ namespace Cqrs.AppServices.Application.CommandHandlers
 
             application.Status = ApplicationStatus.Withdrawn;
             
-            command.EnqueueOutputEvent(new ApplicationWithdrawnEvent(application));
+            command.EnqueueOutputEvent(new ApplicationWithdrawn(
+                application.GuaranteeWorkflowId, application.Id));
             
             return Unit.Value;
         }

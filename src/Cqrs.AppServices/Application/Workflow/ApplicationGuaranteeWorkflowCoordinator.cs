@@ -1,9 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Cqrs.AppServices.Application.Events;
-using Cqrs.AppServices.Finance.Commands;
-using Cqrs.AppServices.Finance.Events;
+using Cqrs.Contracts.Application.Events;
+using Cqrs.Contracts.Finance.Commands;
+using Cqrs.Contracts.Finance.Events;
 using Cqrs.Domain;
+using Cqrs.Infrastructure.Data;
 using Cqrs.Infrastructure.Workflow;
 
 namespace Cqrs.AppServices.Application.Workflow
@@ -11,91 +12,99 @@ namespace Cqrs.AppServices.Application.Workflow
     /// <summary>
     /// Координатор бизнес-процесса по работе с обеспечением заявки.
     /// </summary>
-    public class ApplicationGuaranteeWorkflowCoordinator : WorkflowCoordinator<ApplicationDraftCreatedEvent, ApplicationGuaranteeWorkflow>,
-          IWorkflowStateHandler<ApplicationSubmittedEvent, ApplicationGuaranteeWorkflow>,
-          IWorkflowStateHandler<ApplicationWithdrawnEvent, ApplicationGuaranteeWorkflow>,
-          IWorkflowStateHandler<GuaranteeBlockedEvent, ApplicationGuaranteeWorkflow>,
-          IWorkflowStateHandler<GuaranteeUnblockedEvent, ApplicationGuaranteeWorkflow>
+    public class ApplicationGuaranteeWorkflowCoordinator :
+        WorkflowCoordinator<ApplicationDraftCreated, ApplicationGuaranteeWorkflow>,
+        IWorkflowStateHandler<ApplicationSubmitted, ApplicationGuaranteeWorkflow>,
+        IWorkflowStateHandler<ApplicationWithdrawn, ApplicationGuaranteeWorkflow>,
+        IWorkflowStateHandler<GuaranteeBlocked, ApplicationGuaranteeWorkflow>,
+        IWorkflowStateHandler<GuaranteeUnblocked, ApplicationGuaranteeWorkflow>
     {
-        public ApplicationGuaranteeWorkflowCoordinator(IWorkflowRegistry<ApplicationGuaranteeWorkflow> registry) 
+        private readonly IRepository<Domain.Application> _applicationRepository;
+        
+        public ApplicationGuaranteeWorkflowCoordinator(
+            IWorkflowRegistry<ApplicationGuaranteeWorkflow> registry, 
+            IRepository<Domain.Application> applicationRepository)
             : base(registry)
         {
+            _applicationRepository = applicationRepository;
         }
 
         /// <inheritdoc />
-        protected override Task<ApplicationGuaranteeWorkflow> CreateWorkflowAsync(
-            ApplicationDraftCreatedEvent @event, CancellationToken cancellation)
-        {
-            // Бизнес-процесс инициируется во время подачи заявки
-            return Registry.FindAsync(@event.WorkflowId.Value, cancellation);
-        }
-
-        /// <inheritdoc />
-        public Task ProcessAsync(ApplicationSubmittedEvent @event, ApplicationGuaranteeWorkflow workflow,
+        protected override Task<ApplicationGuaranteeWorkflow> CreateWorkflowAsync(ApplicationDraftCreated @event,
             CancellationToken cancellation)
         {
+            return Task.FromResult(new ApplicationGuaranteeWorkflow
+            {
+                GuaranteeState = ApplicationGuaranteeState.Initial,
+                IsCompleted = false,
+                WorkflowId = @event.WorkflowId
+            });
+        }
+
+        /// <inheritdoc />
+        public async Task ProcessAsync(ApplicationSubmitted @event,
+            WorkflowEnvelope<ApplicationGuaranteeWorkflow> envelope, CancellationToken cancellation)
+        {
+            var application = await _applicationRepository.GetAsync(@event.ApplicationId)
+                .ConfigureAwait(continueOnCapturedContext: false);
+
+            var workflow = envelope.Workflow;
+            
             // Заявка утверждена, обеспечение не заблокировано - пытаемся разблокировать
-            if (workflow.Application.Status == ApplicationStatus.Submitted &&
-                workflow.Application.GuaranteeState == ApplicationGuaranteeState.Initial)
+            if (application.Status == ApplicationStatus.Submitted &&
+                workflow.GuaranteeState == ApplicationGuaranteeState.Initial)
             {
                 // Отправляем запрос на блокировку
-                workflow.OutputCommands.Enqueue(new BlockGuaranteeCommand(
-                    workflow.WorkflowId, workflow.Application.Id));
+                envelope.OutputCommands.Enqueue(new BlockGuarantee(
+                    workflow.WorkflowId, application.Id));
                 
-                workflow.Application.GuaranteeState = ApplicationGuaranteeState.BlockWaiting;
+                workflow.GuaranteeState = ApplicationGuaranteeState.BlockWaiting;
             }
-            
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task ProcessAsync(ApplicationWithdrawnEvent @event, ApplicationGuaranteeWorkflow workflow,
-            CancellationToken cancellation)
+        public async Task ProcessAsync(ApplicationWithdrawn @event,
+            WorkflowEnvelope<ApplicationGuaranteeWorkflow> envelope, CancellationToken cancellation)
         {
-            if (workflow.Application.Status == ApplicationStatus.Withdrawn)
-            {
-                var guaranteeState = workflow.Application.GuaranteeState;
-                switch (guaranteeState)
-                {
-                    case ApplicationGuaranteeState.BlockWaiting:
-                    case ApplicationGuaranteeState.Blocked:
-                        // Отправляем запрос на разблокировку / отмену запроса блокировки
-                        workflow.OutputCommands.Enqueue(new UnblockGuaranteeCommand(
-                            workflow.WorkflowId, workflow.Application.Id));
+            var application = await _applicationRepository.GetAsync(@event.ApplicationId)
+                .ConfigureAwait(continueOnCapturedContext: false);
+            
+            var workflow = envelope.Workflow;
 
-                        // Обновляем статус блокировки
-                        workflow.Application.GuaranteeState = ApplicationGuaranteeState.UnblockWaiting;                   
-                        break;
-                    
-                    case ApplicationGuaranteeState.UnblockWaiting:
-                    case ApplicationGuaranteeState.Unblocked:
-                        // Ничего не делаем, т.к. либо нужно подождать, либо деньги уже были разблокированы
-                        break;
+            // Проверяем, что состояние заявки не изменили
+            // По хорошему - здесь нужно сравнивать не статусы, а версии агрегата c переданной в событии
+            // в случае применения механизма optimistic concurrency (OCC)
+            if (application.Status == ApplicationStatus.Withdrawn)
+            {
+                // Отправляем запрос на разблокировку / отмену запроса блокировки
+                if (workflow.GuaranteeState == ApplicationGuaranteeState.Blocked ||
+                    workflow.GuaranteeState == ApplicationGuaranteeState.BlockWaiting)
+                {
+                    envelope.OutputCommands.Enqueue(new UnblockGuarantee(
+                        workflow.WorkflowId, application.Id));
                 }
             }
-            
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task ProcessAsync(GuaranteeBlockedEvent @event,
-            ApplicationGuaranteeWorkflow workflow,
+        public Task ProcessAsync(GuaranteeBlocked @event, WorkflowEnvelope<ApplicationGuaranteeWorkflow> envelope,
             CancellationToken cancellation)
         {
             // Финансовый сервис находится в другом домене и ничего
             // про заявку не знает, кроме необходимости разблокировать по ней средства.
             // Поэтому не смотря на событие - следить за актуальным состоянием блокировки
             // задача текущего домена. Поэтому обновляем состояние тут, а не в обработчике команд по блокировке.
-            workflow.Application.GuaranteeState = ApplicationGuaranteeState.Blocked;
+            envelope.Workflow.GuaranteeState = ApplicationGuaranteeState.Blocked;
+
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
-        public Task ProcessAsync(GuaranteeUnblockedEvent @event,
-            ApplicationGuaranteeWorkflow workflow,
-            CancellationToken cancellation)
+        public Task ProcessAsync(GuaranteeUnblocked @event,
+            WorkflowEnvelope<ApplicationGuaranteeWorkflow> envelope, CancellationToken cancellation)
         {
-            workflow.Application.GuaranteeState = ApplicationGuaranteeState.Unblocked;
+            envelope.Workflow.GuaranteeState = ApplicationGuaranteeState.Unblocked;
+
             return Task.CompletedTask;
         }
     }

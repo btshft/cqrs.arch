@@ -51,8 +51,18 @@ namespace Cqrs.Domain.Data
         /// <inheritdoc />
         public async Task UpdateAsync(TEntity entity, CancellationToken cancellation)
         {
-            _dbSet.Update(entity);
-            
+            var state = _context.Entry(entity).State;
+
+            if (state == EntityState.Detached)
+            {
+                _context.Attach(entity);
+                _context.Entry(entity).State = EntityState.Modified;
+            }
+            else
+            {
+                _dbSet.Update(entity);
+            }
+
             await _context.SaveChangesAsync(cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
         }

@@ -1,5 +1,5 @@
 ﻿using Cqrs.ComponentRegistrar;
-using Cqrs.WebApi.Api;
+using Cqrs.WebApi.Infrastructure;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;

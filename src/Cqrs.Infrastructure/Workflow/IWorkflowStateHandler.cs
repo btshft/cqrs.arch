@@ -9,16 +9,16 @@ namespace Cqrs.Infrastructure.Workflow
     /// </summary>
     /// <typeparam name="TWorkflowEvent">Тип события, инициировавший переход состояния.</typeparam>
     /// <typeparam name="TWorkflow">Процесс.</typeparam>
-    public interface IWorkflowStateHandler<in TWorkflowEvent, in TWorkflow>
-        where TWorkflowEvent : IEvent
-        where TWorkflow : IWorkflow
+    public interface IWorkflowStateHandler<in TWorkflowEvent, TWorkflow>
+        where TWorkflowEvent : class, IEvent
+        where TWorkflow : class, IWorkflow
     {
         /// <summary>
         /// Выполняет обработку перехода процесса.
         /// </summary>
         /// <param name="event">Событие.</param>
-        /// <param name="workflow">Процесс.</param>
+        /// <param name="envelope">Процесс.</param>
         /// <param name="cancellation">Токен отмены действия.</param>
-        Task ProcessAsync(TWorkflowEvent @event, TWorkflow workflow, CancellationToken cancellation);
+        Task ProcessAsync(TWorkflowEvent @event, WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation);
     }
 }

@@ -1,8 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Cqrs.AppServices.Application.Commands;
-using Cqrs.AppServices.Application.Queries;
-using Cqrs.Contracts.Application;
+using Cqrs.Contracts.Application.Commands;
+using Cqrs.Contracts.Application.Queries;
 using Cqrs.Infrastructure.Dispatcher;
 using Microsoft.AspNetCore.Mvc;
 
@@ -19,9 +18,9 @@ namespace Cqrs.WebApi.Features.Application
         }
 
         [HttpGet]
-        public async Task<IActionResult> FilterApplications([FromQuery] ApplicationFilterDto filter, CancellationToken cancellation = default)
+        public async Task<IActionResult> FilterApplications([FromQuery] FilterApplicationsQuery filter, CancellationToken cancellation = default)
         {
-            var applications = await _dispatcher.DispatchQueryAsync(new FilterApplicationsQuery(filter), cancellation)
+            var applications = await _dispatcher.DispatchQueryAsync(filter, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
             return Ok(applications);
@@ -30,34 +29,35 @@ namespace Cqrs.WebApi.Features.Application
         [HttpGet("{id}")]
         public async Task<IActionResult> GetApplication(int id, CancellationToken cancellation = default)
         {
-            var application = await _dispatcher.DispatchQueryAsync(new GetApplicationQuery(id), cancellation)
+            var application = await _dispatcher.DispatchQueryAsync(
+                    new GetApplicationQuery{ ApplicationId = id}, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
             
             return Ok(application);
         }
 
         [HttpPost("draft")]
-        public async Task<IActionResult> CreateDraft(ApplicationDraftCreationDto creation, CancellationToken cancellation = default)
+        public async Task<IActionResult> CreateDraft(CreateApplicationDraft creation, CancellationToken cancellation = default)
         {
-            await _dispatcher.DispatchCommandAsync(new CreateApplicationDraftCommand(creation), cancellation)
+            await _dispatcher.DispatchCommandAsync(creation, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
             
             return Ok();
         }
 
         [HttpPost("submit")]
-        public async Task<IActionResult> Submit(ApplicationSubmitRequest request, CancellationToken cancellation = default)
+        public async Task<IActionResult> Submit(SubmitApplication request, CancellationToken cancellation = default)
         {
-            await _dispatcher.DispatchCommandAsync(new SubmitApplicationCommand(request.ApplicationId), cancellation)
+            await _dispatcher.DispatchCommandAsync(request, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
             return Ok();
         }
 
         [HttpPost("withdraw")]
-        public async Task<IActionResult> Withdraw(ApplicationWithdrawRequest request, CancellationToken cancellation = default)
+        public async Task<IActionResult> Withdraw(WithdrawApplication request, CancellationToken cancellation = default)
         {
-            await _dispatcher.DispatchCommandAsync(new WithdrawApplicationCommand(request.ApplicationId), cancellation)
+            await _dispatcher.DispatchCommandAsync(request, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
             return Ok();

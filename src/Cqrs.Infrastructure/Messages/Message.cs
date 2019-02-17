@@ -1,4 +1,5 @@
 using System;
+using Newtonsoft.Json;
 
 namespace Cqrs.Infrastructure.Messages
 {
@@ -8,20 +9,11 @@ namespace Cqrs.Infrastructure.Messages
     public abstract class Message : IMessage
     {
         /// <inheritdoc />
+        [JsonIgnore]
         public Guid Id { get; }
-
-        /// <inheritdoc />
-        public Guid? WorkflowId { get; set; }
-
+        
         /// <inheritdoc />
         public DateTime Timestamp { get; }
-
-        protected Message(Guid workflowId)
-        {
-            Id = Guid.NewGuid();
-            Timestamp = DateTime.UtcNow;
-            WorkflowId = workflowId;
-        }
 
         protected Message()
         {
@@ -33,7 +25,7 @@ namespace Cqrs.Infrastructure.Messages
         public override string ToString()
         {
             var separator = $";{Environment.NewLine}";
-            return $"Type: {GetType()}{separator} Id: {Id}{separator} WorkflowId: {WorkflowId}{separator} Timestamp: {Timestamp:u}";
+            return $"Type: {GetType()}{separator} Id: {Id}{separator} Timestamp: {Timestamp:u}";
         }
     }
 }

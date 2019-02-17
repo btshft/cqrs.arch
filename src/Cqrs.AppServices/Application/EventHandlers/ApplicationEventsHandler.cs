@@ -1,6 +1,6 @@
 using System.Threading;
 using System.Threading.Tasks;
-using Cqrs.AppServices.Application.Events;
+using Cqrs.Contracts.Application.Events;
 using Cqrs.Infrastructure.Handlers;
 using Microsoft.Extensions.Logging;
 
@@ -9,7 +9,7 @@ namespace Cqrs.AppServices.Application.EventHandlers
     /// <summary>
     /// Обработчик событий по заявке.
     /// </summary>
-    public class ApplicationEventsHandler : IEventHandler<ApplicationSubmittedEvent>
+    public class ApplicationEventsHandler : IEventHandler<ApplicationSubmitted>
     {
         private readonly ILogger<ApplicationEventsHandler> _logger;
 
@@ -19,7 +19,7 @@ namespace Cqrs.AppServices.Application.EventHandlers
         }
 
         /// <inheritdoc />
-        public Task Handle(ApplicationSubmittedEvent notification, CancellationToken cancellationToken)
+        public Task Handle(ApplicationSubmitted notification, CancellationToken cancellationToken)
         {
             // Отправка уведомлений, смс, email и тд
             

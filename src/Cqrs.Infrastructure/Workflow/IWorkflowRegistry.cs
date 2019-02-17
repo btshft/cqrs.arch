@@ -9,7 +9,7 @@ namespace Cqrs.Infrastructure.Workflow
     /// </summary>
     /// <typeparam name="TWorkflow">Тип процесса.</typeparam>
     public interface IWorkflowRegistry<TWorkflow>
-        where TWorkflow : IWorkflow
+        where TWorkflow : class, IWorkflow
     {
         /// <summary>
         /// Выполняет поиск процесса по индентификатору.
@@ -22,8 +22,8 @@ namespace Cqrs.Infrastructure.Workflow
         /// <summary>
         /// Сохраняет состояние процесса.
         /// </summary>
-        /// <param name="workflow">Процесс.</param>
+        /// <param name="envelope">Процесс.</param>
         /// <param name="cancellation">Токен отмены.</param>
-        Task PersistAsync(TWorkflow workflow, CancellationToken cancellation);
+        Task PersistAsync(WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation);
     }
 }

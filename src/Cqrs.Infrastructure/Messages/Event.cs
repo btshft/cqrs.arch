@@ -7,9 +7,12 @@ namespace Cqrs.Infrastructure.Messages
     /// </summary>
     public abstract class Event : Message, IEvent 
     {
-        protected Event(Guid workflowId) 
-            : base(workflowId)
+        /// <inheritdoc />
+        public Guid WorkflowId { get; }
+        
+        protected Event(Guid workflowId)
         {
+            WorkflowId = workflowId;
         }
     }
 }

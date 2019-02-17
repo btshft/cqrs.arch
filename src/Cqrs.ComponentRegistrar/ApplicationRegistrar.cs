@@ -3,7 +3,7 @@ using AutoMapper;
 using Cqrs.AppServices.Application.EventHandlers;
 using Cqrs.AppServices.Application.Validation;
 using Cqrs.AppServices.Application.Workflow;
-using Cqrs.Contracts.Application;
+using Cqrs.Contracts.Application.Projections;
 using Cqrs.Domain;
 using Cqrs.Domain.Data;
 using Cqrs.Infrastructure.Behaviors;
@@ -32,12 +32,15 @@ namespace Cqrs.ComponentRegistrar
             RegisterDataComponents(services);
             RegisterTypeMapper(services);
             RegisterValidators(services);
-            RegisterWorkflows(services);
+            RegisterWorkflow(services);
         }
 
-        private static void RegisterWorkflows(IServiceCollection services)
+        private static void RegisterWorkflow(IServiceCollection services)
         {
-            services.AddWorkflow<ApplicationGuaranteeWorkflow, ApplicationGuaranteeWorkflowRegistry, ApplicationGuaranteeWorkflowCoordinator>();
+            services.AddWorkflow<
+                ApplicationGuaranteeWorkflow, 
+                DefaultWorkflowRegistry<ApplicationGuaranteeWorkflow>, 
+                ApplicationGuaranteeWorkflowCoordinator>();
         }
         
         private static void RegisterValidators(IServiceCollection services)
@@ -89,7 +92,7 @@ namespace Cqrs.ComponentRegistrar
         {
             services.AddAutoMapper(cfg =>
             {
-                cfg.CreateMap<Application, ApplicationDto>()
+                cfg.CreateMap<Application, ApplicationProjection>()
                     .ForMember(d => d.Status,
                         opt => opt.MapFrom(s => (int)s.Status));
             });

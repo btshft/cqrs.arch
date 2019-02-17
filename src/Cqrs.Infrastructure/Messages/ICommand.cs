@@ -11,6 +11,11 @@ namespace Cqrs.Infrastructure.Messages
     public interface ICommand : IMessage, IRequest<Unit>
     {
         /// <summary>
+        /// Идентификатор процесса.
+        /// </summary>
+        Guid? WorkflowId { get; set; }
+        
+        /// <summary>
         /// Признак наличия исходящих событий.
         /// </summary>
         bool HasOutputEvents { get; }

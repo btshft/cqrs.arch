@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using Cqrs.Infrastructure.Messages;
 
 namespace Cqrs.Infrastructure.Workflow
 {
@@ -18,10 +16,5 @@ namespace Cqrs.Infrastructure.Workflow
         /// Признак завершенности процесса.
         /// </summary>
         bool IsCompleted { get; }
-             
-        /// <summary>
-        /// Исходящие команды.
-        /// </summary>
-        Queue<ICommand> OutputCommands { get; }
     }
 }

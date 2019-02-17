@@ -10,7 +10,7 @@ namespace Cqrs.Infrastructure.Workflow
     /// </summary>
     /// <typeparam name="TWorkflow">Тип процесса.</typeparam>
     public abstract class WorkflowRegistry<TWorkflow> : IWorkflowRegistry<TWorkflow> 
-        where TWorkflow : IWorkflow
+        where TWorkflow : class, IWorkflow
     {
         /// <summary>
         /// Обработчик команд.
@@ -28,35 +28,24 @@ namespace Cqrs.Infrastructure.Workflow
             var workflow = await FindCoreAsync(id, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-            if (workflow.OutputCommands != null)
-            {
-                while (workflow.OutputCommands.TryDequeue(out var command))
-                {
-                    command.WorkflowId = workflow.WorkflowId;
-                        
-                    await Dispatcher.DispatchCommandAsync(command, cancellation)
-                        .ConfigureAwait(continueOnCapturedContext: false);
-                }
-            }
-
             return workflow;
         }
 
-        protected abstract Task<TWorkflow> FindCoreAsync(Guid id, CancellationToken cancellation);
+        public abstract Task<TWorkflow> FindCoreAsync(Guid id, CancellationToken cancellation);
         
         /// <inheritdoc />
-        public async Task PersistAsync(TWorkflow workflow, CancellationToken cancellation)
+        public async Task PersistAsync(WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation)
         {
             try
             {
-                await PersistCoreAsync(workflow, cancellation)
+                await PersistCoreAsync(envelope, cancellation)
                     .ConfigureAwait(continueOnCapturedContext: false);
       
-                if (workflow.OutputCommands != null)
+                if (envelope.OutputCommands != null)
                 {
-                    while (workflow.OutputCommands.TryDequeue(out var command))
+                    while (envelope.OutputCommands.TryDequeue(out var command))
                     {
-                        command.WorkflowId = workflow.WorkflowId;
+                        command.WorkflowId = envelope.Workflow.WorkflowId;
                         
                         await Dispatcher.DispatchCommandAsync(command, cancellation)
                             .ConfigureAwait(continueOnCapturedContext: false);
@@ -69,6 +58,6 @@ namespace Cqrs.Infrastructure.Workflow
             }
         }
 
-        protected abstract Task PersistCoreAsync(TWorkflow workflow, CancellationToken cancellation);
+        protected abstract Task PersistCoreAsync(WorkflowEnvelope<TWorkflow> envelope, CancellationToken cancellation);
     }
 }

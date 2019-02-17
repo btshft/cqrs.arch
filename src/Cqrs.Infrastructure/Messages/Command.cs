@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Cqrs.Infrastructure.Messages
 {
@@ -11,18 +12,24 @@ namespace Cqrs.Infrastructure.Messages
     public abstract class Command : Message, ICommand
     {
         private readonly Queue<Event> _outputEvents;
-  
+
         /// <inheritdoc />
+        [JsonIgnore]
+        public Guid? WorkflowId { get; set; }
+
+        /// <inheritdoc />
+        [JsonIgnore]
         public bool HasOutputEvents => _outputEvents.Count > 0;
         
-        protected Command(Guid workflowId) 
-            : base(workflowId)
-        {
-            _outputEvents = new Queue<Event>();
-        }
-
         protected Command()
         {
+            _outputEvents = new Queue<Event>();
+            WorkflowId = null;
+        }
+
+        protected Command(Guid workflowId)
+        {
+            WorkflowId = workflowId;
             _outputEvents = new Queue<Event>();
         }
 
