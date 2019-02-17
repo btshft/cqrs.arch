@@ -25,21 +25,21 @@ namespace Cqrs.Infrastructure.Workflow
         /// <inheritdoc />
         public async Task<TWorkflow> FindAsync(Guid id, CancellationToken cancellation)
         {
-            var stateMachine = await FindCoreAsync(id, cancellation)
+            var workflow = await FindCoreAsync(id, cancellation)
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-            if (stateMachine.OutputCommands != null)
+            if (workflow.OutputCommands != null)
             {
-                foreach (var command in stateMachine.OutputCommands)
+                while (workflow.OutputCommands.TryDequeue(out var command))
                 {
-                    command.WorkflowId = id;
-                    
+                    command.WorkflowId = workflow.WorkflowId;
+                        
                     await Dispatcher.DispatchCommandAsync(command, cancellation)
                         .ConfigureAwait(continueOnCapturedContext: false);
                 }
             }
 
-            return stateMachine;
+            return workflow;
         }
 
         protected abstract Task<TWorkflow> FindCoreAsync(Guid id, CancellationToken cancellation);

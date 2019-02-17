@@ -69,7 +69,8 @@ namespace Cqrs.Infrastructure.Workflow
             await ((Task) method.Invoke(this, new object[] { @event, ActiveWorkflow, cancellationToken }))
                 .ConfigureAwait(continueOnCapturedContext: false);
 
-            await Registry.PersistAsync(ActiveWorkflow, cancellationToken);
+            await Registry.PersistAsync(ActiveWorkflow, cancellationToken)
+                .ConfigureAwait(continueOnCapturedContext: false);
         }
 
         /// <inheritdoc />
